@@ -1,0 +1,85 @@
+# Backend V1 · Salas de Chat Seguras
+# Límites y endurecimiento documentados en docs/01-arquitectura.md §1.5 y docs/diagrams/02-despliegue.puml.
+# Credenciales de BD: .env en la raíz (ver .env.example). Claves: ./scripts/gen-keys.sh
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-auth}
+      POSTGRES_DB: ${DB_NAME:-auth}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env (ver .env.example)}
+    # Sin "ports": solo AUTH alcanza la BD por la red internal.
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { cpus: "0.50", memory: 256M }
+
+  auth:
+    build: ./auth-service
+    env_file: ./auth-service/.env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${DB_USER:-auth}
+      DB_NAME: ${DB_NAME:-auth}
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
+    ports: ["3000:3000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    volumes:
+      - ./keys/private.pem:/run/keys/private.pem:ro
+      - ./keys/public.pem:/run/keys/public.pem:ro
+    networks: [internal, public]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { cpus: "0.50", memory: 256M }
+
+  stego:
+    build: ./stego-service
+    env_file: ./stego-service/.env
+    ports: ["8000:8000"]
+    # Sin depends_on auth: STEGO arranca solo (T01) y falla de forma segura sin AUTH (T08).
+    volumes:
+      - stego_data:/data
+      - ./keys/public.pem:/run/keys/public.pem:ro
+    networks: [internal, public]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 512M }
+
+networks:
+  internal:
+    internal: true   # sin salida a Internet ni al host
+  public: {}
+
+volumes:
+  pgdata: {}
+  stego_data: {}
