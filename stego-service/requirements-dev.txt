@@ -1,0 +1,4 @@
+# STEGO · tests (no entran en la imagen Docker)
+-r requirements.txt
+pytest==9.2.0
+respx==0.23.1

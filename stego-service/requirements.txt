@@ -1,0 +1,12 @@
+# STEGO · dependencias de ejecución (versiones fijadas en S1; no cambiarlas)
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
+python-multipart==0.0.33
+pydantic==2.14.2
+pydantic-settings==2.16.2
+PyJWT[crypto]==2.15.1
+cryptography==50.0.2
+httpx==0.28.1
+pillow==13.0.0
+numpy==2.5.4
+scipy==1.18.1
