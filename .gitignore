@@ -1,0 +1,23 @@
+# Secretos y material criptográfico
+keys/
+.env
+**/.env
+!.env.example
+!**/.env.example
+
+# Datos locales
+data/
+docs/evidencias/newman.json
+samples/too_big.png
+
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
