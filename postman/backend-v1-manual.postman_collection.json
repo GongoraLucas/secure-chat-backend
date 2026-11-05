@@ -1,0 +1,141 @@
+{
+  "info": {
+    "_postman_id": "8e0fa58e-e11c-5dea-a5aa-c75eb33933cb",
+    "name": "Backend V1 · Escenarios manuales (T01, T08)",
+    "description": "Requieren detener contenedores entre pasos. Ver la descripción de cada carpeta.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "T01 Servicios independientes",
+      "description": "1) docker compose stop stego → Health AUTH 200, Health STEGO falla.\n2) docker compose start stego && docker compose stop auth → Health STEGO 200, Health AUTH falla.\n3) docker compose start auth.",
+      "item": [
+        {
+          "name": "Health AUTH",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{auth_url}}/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Health STEGO",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{stego_url}}/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "T08-a Preparar (AUTH arriba)",
+      "description": "Ejecutar con AUTH levantado. Luego: docker compose stop auth",
+      "item": [
+        {
+          "name": "Login ana",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"ana\",\n  \"password\": \"{{demo_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "",
+                  "const b = (() => { try { return pm.response.json() || {}; } catch (e) { return {}; } })();",
+                  "pm.test('Devuelve access_token Bearer', () => {",
+                  "  pm.expect(b.access_token).to.be.a('string');",
+                  "  pm.expect(b.token_type).to.eql('Bearer');",
+                  "});",
+                  "if (b.access_token) pm.environment.set('ana_token', b.access_token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "T08 AUTH detenido",
+      "description": "Con AUTH detenido. Al terminar: docker compose start auth",
+      "item": [
+        {
+          "name": "ana analiza con AUTH caído",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ana_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/stego_lsb_full.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('503: deny by default, no se procesa', () => pm.expect(pm.response.code).to.be.oneOf([503]));",
+                  "pm.test('No devuelve analysis_id', () => pm.expect(pm.response.text()).to.not.include('analysis_id'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1628 @@
+{
+  "info": {
+    "_postman_id": "2ddf6e33-5a4a-522a-9b90-412575bcb5fe",
+    "name": "Backend V1 · Salas de Chat Seguras",
+    "description": "Escenarios T02–T12 en orden de ejecución. Importar junto con postman/local.postman_environment.json. Ejecutar con newman desde la raíz del repo usando --working-dir . para que encuentre samples/.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 Setup",
+      "description": "Prepara datos de demo. Es idempotente: se puede ejecutar varias veces.",
+      "item": [
+        {
+          "name": "Login admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{admin_username}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "",
+                  "const b = (() => { try { return pm.response.json() || {}; } catch (e) { return {}; } })();",
+                  "pm.test('Devuelve access_token Bearer', () => {",
+                  "  pm.expect(b.access_token).to.be.a('string');",
+                  "  pm.expect(b.token_type).to.eql('Bearer');",
+                  "});",
+                  "if (b.access_token) pm.environment.set('admin_token', b.access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar roles (guardar ids)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{auth_url}}/api/roles"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const roles = (() => { try { const j = pm.response.json(); return Array.isArray(j) ? j : []; } catch (e) { return []; } })();",
+                  "['ADMIN','ANALYST','USER'].forEach(n => {",
+                  "  const r = roles.find(x => x.name === n);",
+                  "  pm.test(`Existe el rol ${n}`, () => pm.expect(r, n).to.exist);",
+                  "  if (r) pm.environment.set(`role_${n}_id`, r.id);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear usuario ana",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"ana\",\n  \"email\": \"ana@demo.local\",\n  \"password\": \"{{demo_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 creado o 409 si ya existía (re-ejecución)', () => pm.expect(pm.response.code).to.be.oneOf([201, 409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear usuario beto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"beto\",\n  \"email\": \"beto@demo.local\",\n  \"password\": \"{{demo_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 creado o 409 si ya existía (re-ejecución)', () => pm.expect(pm.response.code).to.be.oneOf([201, 409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear usuario carla",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"carla\",\n  \"email\": \"carla@demo.local\",\n  \"password\": \"{{demo_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 creado o 409 si ya existía (re-ejecución)', () => pm.expect(pm.response.code).to.be.oneOf([201, 409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar usuarios (guardar ids)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{auth_url}}/api/users"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const users = (() => { try { const j = pm.response.json(); return Array.isArray(j) ? j : []; } catch (e) { return []; } })();",
+                  "['ana','beto','carla'].forEach(u => {",
+                  "  const x = users.find(y => y.username === u);",
+                  "  pm.test(`Existe ${u}`, () => pm.expect(x, u).to.exist);",
+                  "  if (x) pm.environment.set(`${u}_id`, x.id);",
+                  "});",
+                  "pm.test('Ninguna respuesta expone password_hash', () => {",
+                  "  pm.expect(pm.response.text()).to.not.include('password_hash');",
+                  "  pm.expect(pm.response.text()).to.not.include('$argon2');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "T05 Relación N:M",
+      "description": "Un usuario con dos roles (ana) y un rol en dos usuarios (ANALYST: ana y beto).",
+      "item": [
+        {
+          "name": "ana ← ANALYST",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/user-roles",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{ana_id}}\",\n  \"role_id\": \"{{role_ANALYST_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 asignado o 409 si ya existía', () => pm.expect(pm.response.code).to.be.oneOf([201, 409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ana ← USER (segundo rol)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/user-roles",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{ana_id}}\",\n  \"role_id\": \"{{role_USER_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 asignado o 409 si ya existía', () => pm.expect(pm.response.code).to.be.oneOf([201, 409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "beto ← ANALYST (mismo rol, otro usuario)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/user-roles",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{beto_id}}\",\n  \"role_id\": \"{{role_ANALYST_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 asignado o 409 si ya existía', () => pm.expect(pm.response.code).to.be.oneOf([201, 409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "carla ← USER",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/user-roles",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{carla_id}}\",\n  \"role_id\": \"{{role_USER_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 asignado o 409 si ya existía', () => pm.expect(pm.response.code).to.be.oneOf([201, 409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verificar N:M en GET /api/users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{auth_url}}/api/users"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const users = (() => { try { const j = pm.response.json(); return Array.isArray(j) ? j : []; } catch (e) { return []; } })();",
+                  "const byName = n => users.find(u => u.username === n) || { roles: [] };",
+                  "const names = u => (u.roles || []).map(r => r.name);",
+                  "pm.test('ana tiene DOS roles: ANALYST y USER', () => {",
+                  "  pm.expect(names(byName('ana'))).to.include.members(['ANALYST','USER']);",
+                  "});",
+                  "pm.test('El rol ANALYST está asignado a DOS usuarios (ana y beto)', () => {",
+                  "  const holders = users.filter(u => names(u).includes('ANALYST')).map(u => u.username);",
+                  "  pm.expect(holders).to.include.members(['ana','beto']);",
+                  "});",
+                  "const a = (byName('beto').roles || []).find(r => r.name === 'ANALYST');",
+                  "pm.test('Se obtiene el assignment_id de beto→ANALYST', () => pm.expect(a && a.assignment_id).to.be.a('string'));",
+                  "if (a) pm.environment.set('beto_analyst_assignment_id', a.assignment_id);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "T06 Asignación duplicada",
+      "description": "",
+      "item": [
+        {
+          "name": "Repetir ana ← ANALYST",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/user-roles",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{ana_id}}\",\n  \"role_id\": \"{{role_ANALYST_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409 Conflict: UNIQUE(user_id, role_id)', () => pm.expect(pm.response.code).to.be.oneOf([409]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "T02 Autenticación",
+      "description": "",
+      "item": [
+        {
+          "name": "Login ana (válido)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"ana\",\n  \"password\": \"{{demo_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "",
+                  "const b = (() => { try { return pm.response.json() || {}; } catch (e) { return {}; } })();",
+                  "pm.test('Devuelve access_token Bearer', () => {",
+                  "  pm.expect(b.access_token).to.be.a('string');",
+                  "  pm.expect(b.token_type).to.eql('Bearer');",
+                  "});",
+                  "if (b.access_token) pm.environment.set('ana_token', b.access_token);",
+                  "",
+                  "const t = pm.environment.get('ana_token') || '';",
+                  "const parts = t.split('.');",
+                  "const dec = s => JSON.parse(CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Base64.parse(",
+                  "  s.replace(/-/g,'+').replace(/_/g,'/') + '==='.slice((s.length + 3) % 4))));",
+                  "pm.test('JWT con 3 segmentos', () => pm.expect(parts.length).to.eql(3));",
+                  "const h = dec(parts[0]), p = dec(parts[1]);",
+                  "pm.test('Cabecera alg = RS256', () => pm.expect(h.alg).to.eql('RS256'));",
+                  "pm.test('Claims sub, iss, aud, jti, iat, exp presentes', () => {",
+                  "  ['sub','iss','aud','jti','iat','exp'].forEach(c => pm.expect(p, c).to.have.property(c));",
+                  "});",
+                  "pm.test('exp - iat <= 900 s (15 min)', () => pm.expect(p.exp - p.iat).to.be.at.most(900));",
+                  "pm.test('El token NO trae roles ni permisos', () => {",
+                  "  pm.expect(p).to.not.have.any.keys('roles','permissions','role');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login ana (contraseña incorrecta)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"ana\",\n  \"password\": \"incorrecta-123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.expect(pm.response.code).to.be.oneOf([401]));",
+                  "pm.test('No incluye token', () => pm.expect(pm.response.text()).to.not.include('access_token'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login usuario inexistente (mismo mensaje)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"no-existe\",\n  \"password\": \"incorrecta-123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.expect(pm.response.code).to.be.oneOf([401]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login beto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"beto\",\n  \"password\": \"{{demo_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "",
+                  "const b = (() => { try { return pm.response.json() || {}; } catch (e) { return {}; } })();",
+                  "pm.test('Devuelve access_token Bearer', () => {",
+                  "  pm.expect(b.access_token).to.be.a('string');",
+                  "  pm.expect(b.token_type).to.eql('Bearer');",
+                  "});",
+                  "if (b.access_token) pm.environment.set('beto_token', b.access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login carla",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"carla\",\n  \"password\": \"{{demo_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "",
+                  "const b = (() => { try { return pm.response.json() || {}; } catch (e) { return {}; } })();",
+                  "pm.test('Devuelve access_token Bearer', () => {",
+                  "  pm.expect(b.access_token).to.be.a('string');",
+                  "  pm.expect(b.token_type).to.eql('Bearer');",
+                  "});",
+                  "if (b.access_token) pm.environment.set('carla_token', b.access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Perfil ana",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ana_token}}"
+              }
+            ],
+            "url": "{{auth_url}}/api/auth/profile"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "pm.test('Roles vigentes de ana', () => pm.expect(pm.response.json().roles).to.include.members(['ANALYST','USER']));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "T03 Token ausente o inválido → 401",
+      "description": "",
+      "item": [
+        {
+          "name": "Analizar sin Authorization",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{stego_url}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/clean_noise.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.expect(pm.response.code).to.be.oneOf([401]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Analizar con token basura",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{garbage_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/clean_noise.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set('garbage_token', 'esto.no.es-un-jwt');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.expect(pm.response.code).to.be.oneOf([401]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Analizar con payload manipulado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{tampered_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/clean_noise.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Construye tokens maliciosos a partir del token real de ana",
+                  "const t = pm.environment.get('ana_token') || 'a.b.c';",
+                  "const [h, p, s] = t.split('.');",
+                  "const b64urlDecode = x => CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Base64.parse(",
+                  "  x.replace(/-/g,'+').replace(/_/g,'/') + '==='.slice((x.length + 3) % 4)));",
+                  "const b64urlEncode = obj => CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(JSON.stringify(obj)))",
+                  "  .replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');",
+                  "const payload = JSON.parse(b64urlDecode(p));",
+                  "// 1) Payload manipulado (otro sub) con la firma original -> firma inválida",
+                  "const evil = Object.assign({}, payload, { sub: '00000000-0000-0000-0000-000000000000' });",
+                  "pm.environment.set('tampered_token', `${h}.${b64urlEncode(evil)}.${s}`);",
+                  "// 2) alg:none sin firma",
+                  "pm.environment.set('alg_none_token', `${b64urlEncode({ alg: 'none', typ: 'JWT' })}.${p}.`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.expect(pm.response.code).to.be.oneOf([401]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Analizar con alg:none",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{alg_none_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/clean_noise.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Construye tokens maliciosos a partir del token real de ana",
+                  "const t = pm.environment.get('ana_token') || 'a.b.c';",
+                  "const [h, p, s] = t.split('.');",
+                  "const b64urlDecode = x => CryptoJS.enc.Utf8.stringify(CryptoJS.enc.Base64.parse(",
+                  "  x.replace(/-/g,'+').replace(/_/g,'/') + '==='.slice((x.length + 3) % 4)));",
+                  "const b64urlEncode = obj => CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(JSON.stringify(obj)))",
+                  "  .replace(/\\+/g,'-').replace(/\\//g,'_').replace(/=+$/,'');",
+                  "const payload = JSON.parse(b64urlDecode(p));",
+                  "// 1) Payload manipulado (otro sub) con la firma original -> firma inválida",
+                  "const evil = Object.assign({}, payload, { sub: '00000000-0000-0000-0000-000000000000' });",
+                  "pm.environment.set('tampered_token', `${h}.${b64urlEncode(evil)}.${s}`);",
+                  "// 2) alg:none sin firma",
+                  "pm.environment.set('alg_none_token', `${b64urlEncode({ alg: 'none', typ: 'JWT' })}.${p}.`);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.expect(pm.response.code).to.be.oneOf([401]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Analizar con token vencido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{expired_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/clean_noise.png"
+                }
+              ]
+            },
+            "description": "Rellenar la variable `expired_token` con un JWT emitido hace más de JWT_TTL_SECONDS (o levantar AUTH con JWT_TTL_SECONDS=60, hacer login y esperar). Si está vacía, la petición va sin token válido y también debe responder 401."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.expect(pm.response.code).to.be.oneOf([401]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "AUTH: listar usuarios sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{auth_url}}/api/users"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 401', () => pm.expect(pm.response.code).to.be.oneOf([401]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "T04 Autenticado sin privilegio → 403",
+      "description": "",
+      "item": [
+        {
+          "name": "carla (USER) intenta analizar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{carla_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/clean_noise.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "carla (USER) intenta listar usuarios en AUTH",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{carla_token}}"
+              }
+            ],
+            "url": "{{auth_url}}/api/users"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "T09 Análisis LSB",
+      "description": "Los dos 'informativos' solo verifican el formato; sus métricas reales van a docs/05.",
+      "item": [
+        {
+          "name": "ana analiza clean_noise.png",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ana_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/clean_noise.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const r = (() => { try { return pm.response.json() || {}; } catch (e) { return {}; } })();",
+                  "pm.test('Registro completo del análisis', () => {",
+                  "  ['analysis_id','user_id','filename','sha256','technique','status','indicators','action','limitations']",
+                  "    .forEach(k => pm.expect(r, k).to.have.property(k));",
+                  "  pm.expect(r.sha256).to.match(/^[a-f0-9]{64}$/);",
+                  "});",
+                  "console.log(pm.info.requestName, JSON.stringify({ status: r.status, action: r.action, indicators: r.indicators }));",
+                  "",
+                  "pm.test('Imagen limpia: sin_indicios o no_concluyente', () =>",
+                  "  pm.expect(r.status).to.be.oneOf(['sin_indicios','no_concluyente']));",
+                  "pm.test('El user_id es el del token (no del cliente)', () =>",
+                  "  pm.expect(r.user_id).to.eql(pm.environment.get('ana_id')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ana analiza clean_gradient.png (informativo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ana_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/clean_gradient.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const r = (() => { try { return pm.response.json() || {}; } catch (e) { return {}; } })();",
+                  "pm.test('Registro completo del análisis', () => {",
+                  "  ['analysis_id','user_id','filename','sha256','technique','status','indicators','action','limitations']",
+                  "    .forEach(k => pm.expect(r, k).to.have.property(k));",
+                  "  pm.expect(r.sha256).to.match(/^[a-f0-9]{64}$/);",
+                  "});",
+                  "console.log(pm.info.requestName, JSON.stringify({ status: r.status, action: r.action, indicators: r.indicators }));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ana analiza stego_lsb_50.png (informativo)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ana_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/stego_lsb_50.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const r = (() => { try { return pm.response.json() || {}; } catch (e) { return {}; } })();",
+                  "pm.test('Registro completo del análisis', () => {",
+                  "  ['analysis_id','user_id','filename','sha256','technique','status','indicators','action','limitations']",
+                  "    .forEach(k => pm.expect(r, k).to.have.property(k));",
+                  "  pm.expect(r.sha256).to.match(/^[a-f0-9]{64}$/);",
+                  "});",
+                  "console.log(pm.info.requestName, JSON.stringify({ status: r.status, action: r.action, indicators: r.indicators }));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ana analiza stego_lsb_full.png",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ana_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/stego_lsb_full.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "const r = (() => { try { return pm.response.json() || {}; } catch (e) { return {}; } })();",
+                  "pm.test('Registro completo del análisis', () => {",
+                  "  ['analysis_id','user_id','filename','sha256','technique','status','indicators','action','limitations']",
+                  "    .forEach(k => pm.expect(r, k).to.have.property(k));",
+                  "  pm.expect(r.sha256).to.match(/^[a-f0-9]{64}$/);",
+                  "});",
+                  "console.log(pm.info.requestName, JSON.stringify({ status: r.status, action: r.action, indicators: r.indicators }));",
+                  "",
+                  "pm.test('Muestra con carga: sospechoso → cuarentena', () => {",
+                  "  pm.expect(r.status).to.eql('sospechoso');",
+                  "  pm.expect(r.action).to.eql('cuarentena');",
+                  "});",
+                  "if (r.analysis_id) pm.environment.set('ana_analysis_id', r.analysis_id);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "T10 Archivos inválidos",
+      "description": "",
+      "item": [
+        {
+          "name": "fake.png (texto con extensión .png)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ana_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/fake.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 415', () => pm.expect(pm.response.code).to.be.oneOf([415]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "corrupt.png (PNG truncado)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ana_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/corrupt.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.expect(pm.response.code).to.be.oneOf([422]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "too_big.png (> 5 MiB)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ana_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/too_big.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 413', () => pm.expect(pm.response.code).to.be.oneOf([413]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "T11 Propiedad de resultados",
+      "description": "",
+      "item": [
+        {
+          "name": "ana consulta su análisis",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ana_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/results/{{ana_analysis_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "beto (ANALYST) consulta el análisis de ana",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{beto_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/results/{{ana_analysis_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404: no revela la existencia del recurso ajeno', () => pm.expect(pm.response.code).to.be.oneOf([404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "carla (USER) consulta el análisis de ana",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{carla_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/results/{{ana_analysis_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 403', () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "admin consulta el análisis de ana (read_any)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/results/{{ana_analysis_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "T07 Revocación con JWT vigente",
+      "description": "Usa beto_token obtenido en T02 (vigente 15 min). Ejecutar la colección completa de una vez.",
+      "item": [
+        {
+          "name": "beto analiza (rol vigente)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{beto_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/clean_noise.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "admin retira ANALYST a beto",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": "{{auth_url}}/api/user-roles/{{beto_analyst_assignment_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.expect(pm.response.code).to.be.oneOf([204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "beto analiza con el MISMO token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{beto_token}}"
+              }
+            ],
+            "url": "{{stego_url}}/api/steganography/analyze",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "samples/clean_noise.png"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403: el permiso revocado se aplica aunque el JWT siga vigente', () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Restaurar beto ← ANALYST (para re-ejecutar)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{auth_url}}/api/user-roles",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"{{beto_id}}\",\n  \"role_id\": \"{{role_ANALYST_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 201', () => pm.expect(pm.response.code).to.be.oneOf([201]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Logout",
+      "description": "",
+      "item": [
+        {
+          "name": "carla cierra sesión",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{carla_token}}"
+              }
+            ],
+            "url": "{{auth_url}}/api/auth/logout"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 204', () => pm.expect(pm.response.code).to.be.oneOf([204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "carla reutiliza el token tras logout",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{carla_token}}"
+              }
+            ],
+            "url": "{{auth_url}}/api/auth/profile"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('401: jti revocado', () => pm.expect(pm.response.code).to.be.oneOf([401]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "T12 Bitácoras",
+      "description": "Revisión manual tras ejecutar la colección (ver docs/07 §7.5):\ndocker compose logs auth | grep -E \"login_|authz_|role_|token_\"\nComprobar que no aparecen JWT completos, contraseñas, hashes ni claves.",
+      "item": [
+        {
+          "name": "Health AUTH",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{auth_url}}/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Health STEGO",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{stego_url}}/health"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.expect(pm.response.code).to.be.oneOf([200]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
