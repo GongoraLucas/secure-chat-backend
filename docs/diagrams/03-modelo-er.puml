@@ -1,0 +1,73 @@
+@startuml 03-modelo-er
+!include _estilo.iuml
+title AUTH · Modelo entidad–relación (N:M usuarios–roles)
+hide circle
+skinparam linetype ortho
+
+entity "users" as users {
+  * id : uuid <<PK>>
+  --
+  * username : varchar(50) <<UNIQUE>>
+  * email : varchar(254) <<UNIQUE>>
+  * password_hash : text  (argon2id)
+  * status : varchar(16)  (active | inactive)
+  * created_at : timestamptz
+  * updated_at : timestamptz
+}
+
+entity "roles" as roles {
+  * id : uuid <<PK>>
+  --
+  * name : varchar(50) <<UNIQUE>>
+  description : text
+  * status : varchar(16)  (active | inactive)
+  * created_at : timestamptz
+  * updated_at : timestamptz
+}
+
+entity "user_roles" as user_roles {
+  * id : uuid <<PK>>
+  --
+  * user_id : uuid <<FK>>
+  * role_id : uuid <<FK>>
+  * assigned_at : timestamptz
+  ..
+  UNIQUE(user_id, role_id)
+}
+
+entity "permissions" as permissions {
+  * id : uuid <<PK>>
+  --
+  * name : varchar(80) <<UNIQUE>>
+  description : text
+}
+
+entity "role_permissions" as role_permissions {
+  * id : uuid <<PK>>
+  --
+  * role_id : uuid <<FK>>
+  * permission_id : uuid <<FK>>
+  ..
+  UNIQUE(role_id, permission_id)
+}
+
+entity "revoked_tokens" as revoked {
+  * jti : uuid <<PK>>
+  --
+  * user_id : uuid <<FK>>
+  * expires_at : timestamptz
+  * revoked_at : timestamptz
+}
+
+users ||--o{ user_roles : "tiene"
+roles ||--o{ user_roles : "se asigna en"
+roles ||--o{ role_permissions : "concede"
+permissions ||--o{ role_permissions : "pertenece a"
+users ||--o{ revoked : "cierra sesión"
+
+note bottom of user_roles
+  Tabla asociativa real: un usuario puede tener
+  varios roles y un rol varios usuarios.
+  FK con ON DELETE CASCADE.
+end note
+@enduml

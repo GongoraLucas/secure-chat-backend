@@ -1,0 +1,24 @@
+@startuml 06-secuencia-fallo-seguro
+!include _estilo.iuml
+title T08 · Fallo seguro: AUTH no disponible
+autonumber
+
+actor Cliente
+participant "STEGO" as S
+participant "AUTH\n(detenido)" as A #FFCDD2
+
+Cliente -> S : analyze (JWT válido + archivo)
+S -> S : verificación local del JWT ✔
+S -> A : check(...) con timeout AUTH_TIMEOUT_SECONDS (≤ 3 s)
+A -[#C62828]x S : conexión rechazada / timeout
+S -> S : audit_log "authz_unavailable"\n(user = sub, detail con jti; nunca el JWT)
+S --> Cliente : 503 {"detail": "Servicio de autorización no disponible"}
+
+note right of S
+  Deny by default:
+  · no se lee el cuerpo multipart
+  · no se guarda el archivo
+  · no se ejecuta el detector
+  · no se crea registro de análisis
+end note
+@enduml

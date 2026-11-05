@@ -1,0 +1,33 @@
+@startuml 05-secuencia-revocacion
+!include _estilo.iuml
+title T07 · Revocar un rol invalida la siguiente operación con el MISMO JWT
+autonumber
+
+actor "Analista" as U
+actor "Admin" as Ad
+participant "STEGO" as S
+participant "AUTH" as A
+database "PostgreSQL" as DB
+
+U -> S : analyze (JWT_1, vigente)
+S -> A : check(JWT_1, steganography.analyze)
+A -> DB : roles vigentes → ANALYST ✔
+A --> S : allowed = true
+S --> U : 200 análisis
+
+Ad -> A : DELETE /api/user-roles/{id}
+A -> DB : DELETE user_roles (analista, ANALYST)
+A --> Ad : 204
+
+U -> S : analyze (JWT_1, aún sin expirar)
+S -> S : firma y exp válidas ✔
+S -> A : check(JWT_1, steganography.analyze)
+A -> DB : roles vigentes → ninguno con el permiso ✘
+A --> S : allowed = false\nreason = no_active_role_grants_permission
+S --> U : 403 (archivo no procesado)
+
+note over S, A
+  La autorización NO se deriva de claims del JWT:
+  se recalcula contra la BD en cada operación.
+end note
+@enduml

@@ -1,0 +1,34 @@
+@startuml 02-despliegue
+!include _estilo.iuml
+title Backend V1 · Despliegue con Docker Compose
+
+node "Host del equipo (Docker Engine)" {
+  node "contenedor: postgres\nimage postgres:16-alpine\nno-new-privileges · límite 0.50 CPU · 256 MB" as c_pg {
+    database "pgdata" as pgdata
+  }
+  node "contenedor: auth\nnode:22-alpine (multi-stage)\nUSER node · read_only · tmpfs /tmp · no-new-privileges\nports 3000:3000 · límite 0.50 CPU · 256 MB\nhealthcheck GET /health" as c_auth {
+    file "/run/keys/private.pem :ro\n/run/keys/public.pem :ro" as k_auth
+  }
+  node "contenedor: stego\npython:3.12-slim\nUSER app (uid 10001) · read_only · tmpfs /tmp · no-new-privileges\nports 8000:8000 · límite 1.0 CPU · 512 MB\nhealthcheck GET /health" as c_stego {
+    database "stego_data" as sdata
+    file "/run/keys/public.pem :ro" as k_stego
+  }
+}
+
+c_auth --> c_pg : red internal\n5432
+c_stego --> c_auth : red internal\nhttp://auth:3000/internal/...
+c_auth ..> c_pg : depends_on: service_healthy
+
+note as n_stego
+  STEGO <b>no</b> depende de AUTH en el arranque:
+  debe iniciar solo (T01) y fallar de forma
+  segura si AUTH está detenido (T08).
+end note
+c_stego .. n_stego
+
+note as n_pg
+  Sin "ports" hacia el host:
+  solo AUTH alcanza la base de datos.
+end note
+c_pg .. n_pg
+@enduml

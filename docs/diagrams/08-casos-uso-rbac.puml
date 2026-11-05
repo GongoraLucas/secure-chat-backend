@@ -1,0 +1,40 @@
+@startuml 08-casos-uso-rbac
+!include _estilo.iuml
+title Roles y operaciones permitidas (mínimo privilegio)
+left to right direction
+
+actor ADMIN
+actor ANALYST
+actor USER
+actor "STEGO\n(servicio)" as SVC
+
+rectangle AUTH {
+  usecase "Ver perfil" as UC_profile
+  usecase "Cerrar sesión" as UC_logout
+  usecase "Gestionar usuarios" as UC_users
+  usecase "Gestionar roles" as UC_roles
+  usecase "Asignar / retirar roles" as UC_ur
+  usecase "Consultar autorización\n(interno)" as UC_check
+}
+rectangle STEGO {
+  usecase "Analizar imagen" as UC_an
+  usecase "Ver resultados propios" as UC_own
+  usecase "Ver cualquier resultado" as UC_any
+}
+
+USER --> UC_profile
+USER --> UC_logout
+ANALYST --> UC_profile
+ANALYST --> UC_logout
+ANALYST --> UC_an
+ANALYST --> UC_own
+ADMIN --> UC_profile
+ADMIN --> UC_logout
+ADMIN --> UC_users
+ADMIN --> UC_roles
+ADMIN --> UC_ur
+ADMIN --> UC_an
+ADMIN --> UC_own
+ADMIN --> UC_any
+SVC --> UC_check
+@enduml

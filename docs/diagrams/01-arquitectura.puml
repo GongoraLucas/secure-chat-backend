@@ -1,0 +1,45 @@
+@startuml 01-arquitectura
+!include _estilo.iuml
+title Backend V1 · Arquitectura y límites de confianza
+
+rectangle "Zona NO confiable (Internet / host)" as zona_ext #FFEBEE {
+  actor "Cliente REST\n(Postman / newman)" as cliente
+}
+
+rectangle "Red Docker «public» (AUTH :3000 y STEGO :8000 publicados;\nambos también conectados a «internal»)" as red_pub #FFF3E0 {
+  component "AUTH\nNestJS · :3000\n----\nUsuarios, roles N:M\nLogin argon2id\nEmisión JWT RS256\nRBAC desde BD\nEndpoint interno" as auth
+  component "STEGO\nFastAPI · :8000\n----\nVerificación JWT (pública)\nValidación de archivos\nDetector LSB χ²\nPolítica y auditoría" as stego
+}
+
+rectangle "Red Docker «internal» (sin puertos al host)" as red_int #E3F2FD {
+  database "PostgreSQL\nusers · roles · user_roles\npermissions · role_permissions\nrevoked_tokens" as pg
+  database "Volumen stego_data\nstego.db (SQLite)\nquarantine/" as vol
+}
+
+file "keys/private.pem\n(solo AUTH, :ro)" as priv
+file "keys/public.pem\n(AUTH y STEGO, :ro)" as pub
+
+cliente -down-> auth : <b>1</b> POST /api/auth/login\nHTTP JSON
+cliente -down-> stego : <b>3</b> POST /api/steganography/analyze\nAuthorization: Bearer <JWT>
+auth .up.> cliente : <b>2</b> access_token (JWT ≤ 15 min)
+stego -right-> auth : <b>4</b> POST /internal/authorization/check\nX-Service-Token + {subject_token, action}\n(red internal)
+auth -down-> pg : TypeORM\n(credenciales propias)
+stego -down-> vol : sqlite3 / archivos UUID
+priv -[#C62828]-> auth
+pub -[#1565C0]-> auth
+pub -[#1565C0]-> stego
+
+stego -[hidden]-> pg
+note bottom of stego
+  <b>Deny by default</b>: sin decisión verificable
+  de AUTH → 503 y el archivo NO se procesa.
+  STEGO no conoce la BD de AUTH ni la clave privada.
+end note
+
+note right of auth
+  Cada petición protegida consulta
+  roles y permisos <b>vigentes</b> en la BD:
+  revocar un rol surte efecto aunque
+  el JWT siga sin expirar.
+end note
+@enduml

@@ -1,0 +1,38 @@
+@startuml 04-secuencia-analisis
+!include _estilo.iuml
+title Flujo completo: login → análisis autorizado
+autonumber
+
+actor Cliente
+participant "AUTH" as A
+database "PostgreSQL" as DB
+participant "STEGO" as S
+database "stego_data" as V
+
+== Autenticación ==
+Cliente -> A : POST /api/auth/login {username, password}
+A -> DB : SELECT user WHERE username
+A -> A : argon2.verify(hash o hash señuelo, password)\n+ status = active → si no, 401 genérico
+A -> A : firma JWT RS256\n{sub, iss, aud, jti, iat, exp ≤ 15 min}
+A --> Cliente : 200 {access_token, token_type, expires_in}
+
+== Análisis ==
+Cliente -> S : POST /api/steganography/analyze\nBearer JWT + multipart file
+S -> S : verifica firma (public.pem), alg=RS256,\niss, aud, exp, sub, jti
+alt token ausente o inválido
+  S --> Cliente : 401 (no se llama a AUTH, no se lee el archivo)
+end
+S -> A : POST /internal/authorization/check\nX-Service-Token, {subject_token, action}
+A -> A : timingSafeEqual(service token)
+A -> A : revalida el JWT (firma, iss, aud, exp)
+A -> DB : ¿usuario existe? ¿jti revocado? ¿usuario activo?\nJOIN user_roles → roles(active) → role_permissions
+A --> S : 200 {subject_id, action, allowed, reason, can_read_any}
+alt allowed = false
+  S --> Cliente : 403
+end
+S -> S : Content-Length / lectura por trozos (≤ MAX_UPLOAD_BYTES) → 413\nextensión + magic bytes + MIME → 415\nPillow verify + límite de píxeles → 422 (se registra error/rechazo)
+S -> S : SHA-256 · detector χ² por canal y porcentaje\nclasificación + política
+S -> V : solo si sospechoso: quarantine/<analysis_id>\n(el resto nunca se escribe en disco)
+S -> V : INSERT analyses, audit_log
+S --> Cliente : 200 {analysis_id, user_id, filename, sha256, technique,\nstatus, indicators, action, limitations, created_at}
+@enduml

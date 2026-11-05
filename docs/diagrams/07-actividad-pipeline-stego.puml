@@ -1,0 +1,58 @@
+@startuml 07-actividad-pipeline-stego
+!include _estilo.iuml
+title STEGO · Pipeline de validación y análisis de una imagen
+
+start
+:Recibir POST /api/steganography/analyze;
+if (¿Bearer presente y JWT válido?\nRS256 · iss · aud · exp · sub · jti) then (no)
+  :401; <<#FFCDD2>>
+  stop
+endif
+if (¿AUTH responde 200 a tiempo?) then (no)
+  :503 · deny by default; <<#FFCDD2>>
+  stop
+endif
+if (¿allowed = true?) then (no)
+  :403; <<#FFCDD2>>
+  stop
+endif
+if (¿Content-Length ≤ máx + 64 KiB?) then (no)
+  :413 · auditar too_large; <<#FFCDD2>>
+  stop
+endif
+if (¿multipart bien formado?) then (no)
+  :400 · auditar bad_multipart; <<#FFCDD2>>
+  stop
+endif
+:Leer campo "file" por trozos de 64 KiB;
+if (¿campo presente y tamaño ≤ MAX_UPLOAD_BYTES?) then (no)
+  :415 (sin campo) / 413 (grande)\nsolo auditoría; <<#FFCDD2>>
+  stop
+endif
+if (¿extensión, magic bytes y MIME\ncoinciden con PNG o BMP?) then (no)
+  :415 · solo auditoría; <<#FFCDD2>>
+  stop
+endif
+:Calcular SHA-256;
+if (¿ancho × alto ≤ MAX_PIXELS y\nPillow verify + load OK?) then (no)
+  :persistir status = error · acción = rechazo\n422; <<#FFE0B2>>
+  stop
+endif
+:Chi-cuadrado por canal R, G, B (L en grises)\nen 10 %, 20 %, … 100 % de los píxeles;
+if (¿min(ancho, alto) < 64 px o\nsin pares válidos en la primera porción?) then (sí)
+  :no_concluyente → advertencia; <<#FFF8E1>>
+elseif (¿p máx. de la primera porción > 0.95?) then (sí)
+  :sospechoso → cuarentena\n(quarantine/<analysis_id>, 0600); <<#FFF59D>>
+  note right
+    Solo «sospechoso» escribe el archivo en disco;
+    en los demás casos nunca sale de memoria.
+  end note
+elseif (¿p > 0.5?) then (sí)
+  :no_concluyente → advertencia; <<#FFF8E1>>
+else
+  :sin_indicios → sin acción; <<#C8E6C9>>
+endif
+:Persistir análisis + auditar analysis_completed;
+:200 con indicadores y limitaciones;
+stop
+@enduml

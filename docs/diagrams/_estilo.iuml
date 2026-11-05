@@ -1,0 +1,28 @@
+' Estilo común para todos los diagramas del proyecto.
+' Uso: !include _estilo.iuml  (ruta relativa al .puml)
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam roundCorner 8
+skinparam ArrowColor #37474F
+skinparam ArrowFontSize 11
+skinparam NoteBackgroundColor #FFF8E1
+skinparam NoteBorderColor #F9A825
+skinparam ComponentBackgroundColor #E8F5E9
+skinparam ComponentBorderColor #2E7D32
+skinparam DatabaseBackgroundColor #E3F2FD
+skinparam DatabaseBorderColor #1565C0
+skinparam ActorBackgroundColor #FFFFFF
+skinparam ParticipantBackgroundColor #E8F5E9
+skinparam ParticipantBorderColor #2E7D32
+skinparam SequenceLifeLineBorderColor #90A4AE
+skinparam SequenceGroupBackgroundColor #FAFAFA
+skinparam ActivityBackgroundColor #E8F5E9
+skinparam ActivityBorderColor #2E7D32
+skinparam ActivityDiamondBackgroundColor #FFF8E1
+skinparam ClassBackgroundColor #FFFFFF
+skinparam ClassBorderColor #2E7D32
+skinparam ClassHeaderBackgroundColor #E8F5E9
+skinparam NodeBackgroundColor #F1F8E9
+skinparam NodeBorderColor #2E7D32
+skinparam RectangleBorderColor #546E7A
