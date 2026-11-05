@@ -57,7 +57,7 @@ cd stego-service && python -m venv .venv && . .venv/bin/activate && pip install 
 npx newman run postman/backend-v1.postman_collection.json -e postman/local.postman_environment.json --working-dir .
 ```
 
-Postman: importar `postman/backend-v1.postman_collection.json`, `postman/backend-v1-manual.postman_collection.json` y `postman/local.postman_environment.json`, y poner en `admin_password` el valor de `ADMIN_PASSWORD`.
+Postman: importar `postman/backend-v1.postman_collection.json`, `postman/backend-v1-manual.postman_collection.json` y `postman/local.postman_environment.json`, y poner en `admin_password` el valor de `ADMIN_PASSWORD` del .env de auth-service.
 
 ## Documentación
 
@@ -70,10 +70,8 @@ Postman: importar `postman/backend-v1.postman_collection.json`, `postman/backend
 | [05 Detector](docs/05-detector-esteganografia.md) | Chi-cuadrado, parámetros, resultados y limitaciones |
 | [06 Matriz de riesgos](docs/06-matriz-riesgos.md) | Activos, amenazas, controles, ZT/SbD/SL, ISO 27001/27034 |
 | [07 Pruebas](docs/07-pruebas-evidencias.md) | Trazabilidad T01–T12 y evidencias |
-| [08 Sustentación](docs/08-guia-sustentacion.md) | Guion de la demo y preguntas frecuentes |
 
 Diagramas en PlantUML: `docs/diagrams/*.puml` → `./scripts/render-diagrams.sh`.
-Exportar la documentación a DOCX o PDF (opcional): `./scripts/export-docs.sh`.
 
 ## Estructura
 
