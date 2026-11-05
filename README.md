@@ -30,7 +30,7 @@ cp stego-service/.env.example stego-service/.env
 #    el MISMO SERVICE_TOKEN en auth-service/.env y stego-service/.env
 #    (generar con: openssl rand -hex 32)
 
-# 3. Levantar
+# 3. Levantar (si ya habías levantado antes y cambiaste DB_PASSWORD, primero: docker compose down -v)
 docker compose up -d --build
 docker compose ps
 
@@ -38,8 +38,9 @@ docker compose ps
 docker compose exec auth npm run migration:run
 docker compose exec auth npm run seed      # idempotente: roles, permisos §5 y admin desde env
 
-# 5. Muestras de imágenes (necesita numpy/Pillow: usa el venv de STEGO,
-#    p. ej. `python3.12 -m venv stego-service/.venv && stego-service/.venv/bin/pip install -r stego-service/requirements.txt`)
+# 5. Muestras de imágenes (samples/ no se versiona; obligatorias para newman). Necesita numpy/Pillow:
+#    primero crear el venv de STEGO y luego generar las imágenes
+python3.12 -m venv stego-service/.venv && stego-service/.venv/bin/pip install -r stego-service/requirements.txt
 stego-service/.venv/bin/python scripts/make_samples.py
 ```
 
@@ -52,12 +53,27 @@ stego-service/.venv/bin/python scripts/make_samples.py
 
 ```bash
 ./scripts/test-db.sh up   # Postgres desechable en 127.0.0.1:5433 para las e2e de AUTH
+## Prueba es auth
 cd auth-service  && npm ci && npm run test && npm run test:e2e
-cd stego-service && python -m venv .venv && . .venv/bin/activate && pip install -r requirements-dev.txt && pytest -q
-npx newman run postman/backend-v1.postman_collection.json -e postman/local.postman_environment.json --working-dir .
+##Regresar carpeta raiz
+cd ..
+## pruebas stego
+cd stego-service && python -m venv .venv && . .venv/bin/activate && pip install -r requirements-dev.txt
+
+pytest -q
+
+## regresar al directorio raiz
+cd ..
+## pruebas postman
+# Ejecutar DESDE LA RAÍZ del repo, con los servicios levantados, migraciones/seed y muestras (pasos 4 y 5).
+# La contraseña de admin se inyecta desde auth-service/.env (no hace falta editar el JSON).
+# Login limitado a 10/min: esperar 1 minuto entre ejecuciones. Resultado esperado: 73 aserciones, 0 fallidas.
+# Si al mostrar la tabla no termina, cortar con Ctrl+C.
+npx newman run postman/backend-v1.postman_collection.json -e postman/local.postman_environment.json --working-dir . \
+  --env-var "admin_password=$(grep ^ADMIN_PASSWORD= auth-service/.env | cut -d= -f2-)"
 ```
 
-Postman: importar `postman/backend-v1.postman_collection.json`, `postman/backend-v1-manual.postman_collection.json` y `postman/local.postman_environment.json`, y poner en `admin_password` el valor de `ADMIN_PASSWORD` del .env de auth-service.
+Postman: importar `postman/backend-v1.postman_collection.json`, `postman/backend-v1-manual.postman_collection.json` y `postman/local.postman_environment.json`, y poner en `admin_password` el valor de `ADMIN_PASSWORD` del .env de auth-service (solo en tu copia local; no lo subas al repo).
 
 ## Documentación
 
